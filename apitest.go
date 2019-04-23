@@ -409,6 +409,14 @@ type Result struct {
 	Response *http.Response
 }
 
+func (r *Result) BodyString() string {
+	data, err := ioutil.ReadAll(r.Response.Body)
+	if err != nil {
+		panic(err)
+	}
+	return string(data)
+}
+
 type mockInteraction struct {
 	request   *http.Request
 	response  *http.Response

@@ -440,14 +440,27 @@ func TestApiTest_EndReturnsTheResult(t *testing.T) {
 		Handler(handler).
 		Get("/hello").
 		Expect(t).
-		Body(`{
-			"a": 12345,
-			"b": "hi"
-		}`).
 		Status(http.StatusCreated).
 		End()
 
 	assert.Equal(t, http.StatusCreated, res.Response.StatusCode)
+	assert.Equal(t, "hello", res.BodyString())
+}
+
+func TestApiTest_ResultBodyStringHandlesEmptyBody(t *testing.T) {
+	handler := http.NewServeMux()
+	handler.HandleFunc("/hello", func(w http.ResponseWriter, r *http.Request) {
+		w.WriteHeader(http.StatusAccepted)
+	})
+
+	res := New().
+		Handler(handler).
+		Get("/hello").
+		Expect(t).
+		Status(http.StatusAccepted).
+		End()
+
+	assert.Equal(t, "", res.BodyString())
 }
 
 func TestApiTest_CustomAssert(t *testing.T) {
