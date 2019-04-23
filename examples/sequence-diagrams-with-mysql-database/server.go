@@ -7,13 +7,20 @@ import (
 	"log"
 	"net/http"
 
+	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 	"github.com/jmoiron/sqlx"
-	_ "github.com/lib/pq"
+	"github.com/pressly/goose"
 )
 
 func main() {
-	db, err := sqlx.Connect("postgres", dbAddr)
+	db, err := sqlx.Connect("mysql", dbAddr)
+	if err != nil {
+		panic(err)
+	}
+
+	goose.SetDialect("mysql")
+	err = goose.Up(db.DB, "./migrations")
 	if err != nil {
 		panic(err)
 	}
@@ -38,18 +45,17 @@ func (a *App) start() {
 
 func getUser(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("CALLED getUser")
 		var user User
 		get(fmt.Sprintf("http://users/api/user?id=%s", r.URL.Query()["name"]), &user)
 
 		var isContactable bool
-		err := db.Get(&isContactable, "SELECT is_contactable from users where username=$1 AND is_contactable=$2 LIMIT 1", user.Name, true)
+		err := db.Get(&isContactable, "SELECT is_contactable from users where username=? AND is_contactable=? LIMIT 1", user.Name, true)
 		if err != nil {
 			panic(err)
 		}
 
 		result := []string{}
-		errSelect := db.Select(&result, "SELECT username from users where is_contactable=$1", true)
+		errSelect := db.Select(&result, "SELECT username from users where is_contactable=?", true)
 		if errSelect != nil {
 			panic(errSelect)
 		}
@@ -61,7 +67,7 @@ func getUser(db *sqlx.DB) http.HandlerFunc {
 		err = db.Select(&names, "SELECT username FROM users LIMIT 10")
 
 		tx := db.MustBegin()
-		tx.Exec("DELETE FROM users WHERE username=$1", user.Name)
+		tx.Exec("DELETE FROM users WHERE username=?", user.Name)
 		tx.Exec("DELETE FROM users")
 		tx.Commit()
 

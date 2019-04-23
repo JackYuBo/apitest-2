@@ -11,14 +11,14 @@ import (
 	"github.com/steinfletcher/apitest"
 )
 
-// This test requires a postgres database to run
+// This test requires a mysql database to run
 
 func TestGetUser_With_Default_Report_Formatter(t *testing.T) {
 	username := uuid.NewV4().String()[0:7]
 
 	DBSetup(func(db *sqlx.DB) {
-		q := "INSERT INTO users (username, is_contactable) VALUES ('%s', %v)"
-		db.MustExec(fmt.Sprintf(q, username, true))
+		q := "INSERT INTO users (username, is_contactable) VALUES (?, ?)"
+		db.MustExec(q, username, true)
 	})
 
 	apiTest("gets the user").
@@ -45,10 +45,10 @@ func getUserMock(username string) *apitest.Mock {
 
 func apiTest(name string) *apitest.APITest {
 	recorder := apitest.NewTestRecorder()
-	recordingDriver := apitest.WrapWithRecorder("postgres", recorder)
-	sql.Register("postgresWithRecorder", recordingDriver)
+	recordingDriver := apitest.WrapWithRecorder("mysql", recorder)
+	sql.Register("mysqlWithRecorder", recordingDriver)
 
-	testDB, err := sqlx.Connect("postgresWithRecorder", dbAddr)
+	testDB, err := sqlx.Connect("mysqlWithRecorder", dbAddr)
 	if err != nil {
 		panic(err)
 	}

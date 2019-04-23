@@ -38,7 +38,6 @@ func (a *App) start() {
 
 func getUser(db *sqlx.DB) http.HandlerFunc {
 	return func(w http.ResponseWriter, r *http.Request) {
-		fmt.Println("CALLED getUser")
 		var user User
 		get(fmt.Sprintf("http://users/api/user?id=%s", r.URL.Query()["name"]), &user)
 

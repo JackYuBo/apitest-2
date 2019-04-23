@@ -1,6 +1,11 @@
 
-postgres-dev:
+mysql-dev:
 	docker stop apitest || true && docker rm apitest || true
-	docker run -d -e POSTGRES_PASSWORD=postgres -e POSTGRES_USER=postgres -e POSTGRES_DB=apitest -p 5432:5432 --name apitest postgres:9.6
-	sleep 4
-	cd migrations && goose postgres "host=localhost port=5432 user=postgres password=postgres dbname=apitest sslmode=disable" up
+	docker run -d \
+	    -e MYSQL_ROOT_PASSWORD=mysql \
+	    -e MYSQL_PASSWORD=mysql \
+	    -e MYSQL_USER=mysql \
+	    -e MYSQL_DATABASE=apitest \
+	    -p 3306:3306 \
+	    --name apitest \
+	    mysql:8.0

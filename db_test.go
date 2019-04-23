@@ -1,16 +1,5 @@
 package apitest
 
-import (
-	"context"
-	"database/sql"
-	"database/sql/driver"
-	"io"
-	"log"
-	"testing"
-
-	"github.com/stretchr/testify/assert"
-)
-
 //type TestDriver struct{}
 //
 //func (d *TestDriver) Open(name string) (driver.Conn, error) { return &TestConn{}, nil }
