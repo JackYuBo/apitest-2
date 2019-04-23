@@ -41,7 +41,7 @@ func (d *RecordingDriver) Open(name string) (driver.Conn, error) {
 	fmt.Println("Driver Debug: Driver Open")
 	conn, err := d.Driver.Open(name)
 	if err != nil {
-		return conn, err
+		return nil, err
 	}
 
 	_, isConnQuery := conn.(driver.Queryer)
@@ -100,7 +100,7 @@ func (c *RecordingConnector) Connect(context context.Context) (driver.Conn, erro
 	fmt.Println("Driver Debug: Connector Connect")
 	conn, err := c.Connector.Connect(context)
 	if err != nil {
-		return conn, err
+		return nil, err
 	}
 	recordingConn := &RecordingConn{Conn: conn, recorder: c.recorder, sourceName: c.sourceName}
 
@@ -126,7 +126,7 @@ func (conn *RecordingConn) Prepare(query string) (driver.Stmt, error) {
 	fmt.Println("Driver Debug: Conn Prepare")
 	stmt, err := conn.Conn.Prepare(query)
 	if err != nil {
-		return stmt, err
+		return nil, err
 	}
 
 	_, isStmtQueryContext := stmt.(driver.StmtQueryContext)
@@ -159,7 +159,7 @@ func (conn *RecordingConnWithQuery) Query(query string, args []driver.Value) (dr
 	if connQuery, ok := conn.Conn.(driver.Queryer); ok {
 		rows, err = connQuery.Query(query, args)
 		if err != nil {
-			return rows, err
+			return nil, err
 		}
 
 		if conn.recorder != nil {
@@ -194,26 +194,26 @@ func (conn *RecordingConnWithQueryContext) QueryContext(ctx context.Context, que
 	if connQueryCtx, ok := conn.Conn.(driver.QueryerContext); ok {
 		rows, err = connQueryCtx.QueryContext(ctx, query, args)
 		if err != nil {
-			return rows, err
+			return nil, err
 		}
-	}
 
-	if conn.recorder != nil {
-		recorderBody := query
-		if len(args) > 0 {
-			convertedArgs, convertErr := namedValueToValue(args)
-			if convertErr != nil {
-				return nil, convertErr
+		if conn.recorder != nil {
+			recorderBody := query
+			if len(args) > 0 {
+				convertedArgs, convertErr := namedValueToValue(args)
+				if convertErr != nil {
+					return nil, convertErr
+				}
+				recorderBody = fmt.Sprintf("%s %+v", query, convertedArgs)
 			}
-			recorderBody = fmt.Sprintf("%s %+v", query, convertedArgs)
+			conn.recorder.AddMessageRequest(MessageRequest{
+				Source:    SystemUnderTestDefaultName,
+				Target:    conn.sourceName,
+				Header:    "SQL Query",
+				Body:      recorderBody,
+				Timestamp: time.Now().UTC(),
+			})
 		}
-		conn.recorder.AddMessageRequest(MessageRequest{
-			Source:    SystemUnderTestDefaultName,
-			Target:    conn.sourceName,
-			Header:    "SQL Query",
-			Body:      recorderBody,
-			Timestamp: time.Now().UTC(),
-		})
 
 		return &RecordingRows{Rows: rows, recorder: conn.recorder, sourceName: conn.sourceName}, err
 	}
@@ -233,7 +233,7 @@ func (conn *RecordingConnWithExec) Exec(query string, args []driver.Value) (driv
 	if connExec, ok := conn.Conn.(driver.Execer); ok {
 		result, err = connExec.Exec(query, args)
 		if err != nil {
-			return result, err
+			return nil, err
 		}
 
 		if conn.recorder != nil {
@@ -279,7 +279,7 @@ func (conn *RecordingConnWithExecContext) ExecContext(ctx context.Context, query
 	if connExecCtx, ok := conn.Conn.(driver.ExecerContext); ok {
 		result, err = connExecCtx.ExecContext(ctx, query, args)
 		if err != nil {
-			return result, err
+			return nil, err
 		}
 
 		if conn.recorder != nil {
@@ -330,7 +330,7 @@ func (conn *RecordingConnWithPrepareContext) PrepareContext(ctx context.Context,
 	if connPrepareCtx, ok := conn.Conn.(driver.ConnPrepareContext); ok {
 		stmt, err = connPrepareCtx.PrepareContext(ctx, query)
 		if err != nil {
-			return stmt, err
+			return nil, err
 		}
 
 		_, isStmtQueryContext := stmt.(driver.StmtQueryContext)
