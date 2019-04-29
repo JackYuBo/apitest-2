@@ -11,6 +11,13 @@ import (
 	"time"
 )
 
+// RegisterDBDriver registers a sql driver if it hasn't already been registered
+func RegisterDBDriver(driverName string, sqlDriver driver.Driver) {
+	if !isDriverRegistered(driverName) {
+		sql.Register(driverName, sqlDriver)
+	}
+}
+
 // WrapWithRecorder wraps an existing driver with a Recorder
 func WrapWithRecorder(driverName string, recorder *Recorder) driver.Driver {
 	sqlDriver := sqlDriverNameToDriver(driverName)
@@ -614,4 +621,15 @@ func sqlDriverNameToDriver(driverName string) driver.Driver {
 	}
 
 	return nil
+}
+
+func isDriverRegistered(driverName string) bool {
+	drivers := sql.Drivers()
+	for i := range drivers {
+		if drivers[i] == driverName {
+			return true
+		}
+	}
+
+	return false
 }
